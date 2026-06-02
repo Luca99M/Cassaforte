@@ -244,7 +244,56 @@ function syncAll() {
   });
 }
 
-window.addEventListener('online', function () { syncAll(); render(); });
+/* Legge lo storico da Supabase e lo unisce al locale (vince la copia più recente;
+   le modifiche locali non ancora sincronizzate hanno priorità) */
+function pullFromCloud(cb) {
+  if (!navigator.onLine) { if (cb) cb(); return; }
+  fetch(SUPABASE_URL + '/rest/v1/' + TABLE + '?select=*', {
+    headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
+  })
+  .then(function (r) { return r.ok ? r.json() : []; })
+  .then(function (remote) {
+    if (!Array.isArray(remote)) remote = [];
+    var local = loadTx();
+    var byId = {};
+    local.forEach(function (t) { byId[t.local_id] = t; });
+
+    remote.forEach(function (r) {
+      var key = r.local_id || r.id;
+      var rt = {
+        id: r.id || key,
+        local_id: key,
+        user_name: r.user_name,
+        transaction_type: r.transaction_type,
+        amount: Number(r.amount),
+        reason: r.reason || '',
+        created_at: r.created_at,
+        updated_at: r.updated_at || r.created_at,
+        deleted: !!r.deleted,
+        deleted_at: r.deleted_at || null,
+        synced: true
+      };
+      var ex = byId[key];
+      if (!ex) { byId[key] = rt; return; }
+      if (ex.synced === false) return; // modifica locale in attesa: la teniamo
+      var lu = new Date(ex.updated_at || ex.created_at).getTime();
+      var ru = new Date(rt.updated_at).getTime();
+      if (ru >= lu) byId[key] = rt;
+    });
+
+    var merged = Object.keys(byId).map(function (k) { return byId[k]; });
+    merged.sort(function (a, b) { return new Date(b.created_at) - new Date(a.created_at); });
+    saveTx(merged);
+    if (cb) cb();
+    if (state.screen === 'history' || state.screen === 'home' || state.screen === 'total') render();
+  })
+  .catch(function () { if (cb) cb(); });
+}
+
+window.addEventListener('online', function () {
+  syncAll().then(function () { pullFromCloud(); });
+  render();
+});
 window.addEventListener('offline', function () { render(); });
 
 /* ============== TRANSACTION OPS ============== */
@@ -358,12 +407,24 @@ function parseVoice(text) {
   var raw = (text || '').trim();
   var lower = raw.toLowerCase();
 
-  // tipo operazione
-  // AGGIUNGI (deposito): ho messo, metto, aggiungo, deposito, incasso, verso, vendita...
+  // ---- TIPO OPERAZIONE ----
+  // AGGIUNGI (+): verbi e modi di dire per mettere soldi in cassaforte
+  var addRe = /\b(aggiung\w*|mett\w*|mess\w*|inseri\w*|deposit\w*|vers\w*|accanton\w*|salv\w*|risparmi\w*|caric\w*|increment\w*|aument\w*|accredit\w*|butt\w*|teng\w*|tien\w*|tenut\w*|conserv\w*|entr\w*|entran\w*|guadagn\w*|ricev\w*|ricevut\w*|incass\w*|vendit\w*|vendut\w*|port\w*)\b/;
+  // TOGLI (-): verbi e modi di dire per prelevare soldi
+  var takeRe = /\b(tolg\w*|tolt\w*|togl\w*|lev\w*|prelev\w*|prelievo|rimuov\w*|rimoss\w*|ritir\w*|prend\w*|pres[oia]|sottra\w*|spend\w*|spes\w*|utilizz\w*|usa\w*|uso|consum\w*|consegn\w*|scaric\w*|diminu\w*|riduc\w*|ridurr\w*|ridott\w*|addebit\w*|acquist\w*|pag\w*|compr\w*|serv\w*|uscit\w*|escon\w*|usciti|esce|dato via|do via|dare via)\b/;
+
+  var aMatch = addRe.exec(lower);
+  var tMatch = takeRe.exec(lower);
+  var ai = aMatch ? aMatch.index : -1;
+  var ti = tMatch ? tMatch.index : -1;
+
   var type = null;
-  if (/\b(mett\w*|mess\w*|aggiung\w*|deposit\w*|incass\w*|vers\w*|ricev\w*|vendit\w*|vendut\w*|guadagn\w*|entrat\w*)\b/.test(lower)) type = 'deposito';
-  // PRELEVA (prelievo): ho tolto, prendo, preso, rimuovo, prelevo, ritiro, pago...
-  if (/\b(tolt\w*|tolg\w*|togl\w*|prend\w*|pres\w*|prelev\w*|prelievo|rimuov\w*|rimoss\w*|ritir\w*|pag\w*|spes\w*|compr\w*|acquist\w*|uscit\w*|consegn\w*)\b/.test(lower)) type = 'prelievo';
+  if (ai >= 0 && (ti < 0 || ai <= ti)) type = 'deposito';
+  else if (ti >= 0 && (ai < 0 || ti < ai)) type = 'prelievo';
+
+  // simboli espliciti hanno priorità
+  if (/(^|\s)\+\s*\d/.test(lower) || /\bpiù\b|\bpiu\b/.test(lower)) type = 'deposito';
+  if (/(^|\s)-\s*\d/.test(lower) || /\bmeno\b/.test(lower)) type = 'prelievo';
 
   // importo: tolgo i punti delle migliaia, tengo la virgola decimale
   var cleaned = lower.replace(/(\d)\.(?=\d{3}\b)/g, '$1');
@@ -410,7 +471,7 @@ function startRecognition() {
       var p = parseVoice(t);
       state.voiceText = t;
       if (p.type) state.entryType = p.type;
-      if (!state.entryType) state.entryType = 'prelievo';
+      if (!state.entryType) state.entryType = 'deposito';
       state.amount = (p.amount != null) ? String(p.amount) : '';
       state.reason = p.reason || '';
       recBusy = false;
@@ -450,6 +511,7 @@ var state = {
   amount: '',
   reason: '',
   editingId: null,
+  editReturn: 'home',
   filter: 'Tutti',
   search: '',
   pwError: '',
@@ -673,7 +735,7 @@ function renderEdit() {
 
   return '' +
   '<div class="card">' +
-    '<div class="topbar"><button class="back" data-act="home">←</button><h2>✏️ Modifica operazione</h2></div>' +
+    '<div class="topbar"><button class="back" data-act="editBack">←</button><h2>✏️ Modifica operazione</h2></div>' +
     '<div class="small muted">' + escapeHtml(t.user_name) + ' — ' + typeLabel(t.transaction_type) +
       ' — ' + fmtDateTime(t.created_at) + '</div>' +
     '<div class="display mt">' +
@@ -712,11 +774,16 @@ function renderHistory() {
   var items = filtered.length ? filtered.map(function (t) {
     var cls = t.deleted ? 'li-del' : (t.transaction_type === 'controllo' ? 'li-ctrl' : (t.amount >= 0 ? 'li-in' : 'li-out'));
     return '<div class="list-item ' + cls + '">' +
-      '<div>' +
+      '<div style="flex:1">' +
         '<div style="font-weight:800">' + escapeHtml(t.user_name) + ' · ' + typeLabel(t.transaction_type) +
           (t.deleted ? ' <span class="pill pill-out">ELIMINATA</span>' : '') + '</div>' +
         '<div class="small muted">' + escapeHtml(t.reason || '—') + '</div>' +
         '<div class="small muted">' + fmtDateTime(t.created_at) + '</div>' +
+        (t.deleted ? '' :
+          '<div style="display:flex;gap:8px;margin-top:8px">' +
+            '<button class="chip" data-edit="' + t.local_id + '">✏️ Modifica</button>' +
+            '<button class="chip" style="background:#fee2e2;color:#991b1b" data-del="' + t.local_id + '">🗑️ Elimina</button>' +
+          '</div>') +
       '</div>' +
       '<div style="font-size:20px;font-weight:800;color:' + (t.amount >= 0 ? '#16a34a' : '#dc2626') + '">' +
         (t.amount >= 0 ? '+' : '') + eur(t.amount) + '</div>' +
@@ -852,8 +919,9 @@ function bind() {
       var a = el.getAttribute('data-act');
       if (a === 'home') go('home');
       else if (a === 'total') go('total');
-      else if (a === 'history') go('history');
+      else if (a === 'history') { go('history'); pullFromCloud(); }
       else if (a === 'audit') go('audit');
+      else if (a === 'editBack') go(state.editReturn || 'home');
       else if (a === 'userback') { stopRecognition(); state.voiceError = ''; state.screen = 'user'; render(); }
       else if (a === 'export') exportCSV();
       else if (a === 'retry') { startRecognition(); }
@@ -1024,17 +1092,18 @@ function bind() {
       if (t.transaction_type === 'controllo') signed = (t.amount < 0 ? -amt : amt);
       else signed = t.transaction_type === 'deposito' ? amt : -amt;
       editTransaction(state.editingId, signed, state.reason.trim());
-      go('home');
+      go(state.editReturn || 'home');
     });
   }
 
-  // edit / delete from user page
+  // edit / delete (dalla pagina utente e dallo storico)
   app.querySelectorAll('[data-edit]').forEach(function (el) {
     el.addEventListener('click', function () {
       var id = el.getAttribute('data-edit');
       var txs = loadTx(); var t = null;
       for (var i = 0; i < txs.length; i++) { if (txs[i].local_id === id) { t = txs[i]; break; } }
       if (!t) return;
+      state.editReturn = (state.screen === 'history') ? 'history' : 'home';
       state.editingId = id;
       state.amount = String(Math.abs(t.amount));
       state.reason = t.reason || '';
@@ -1086,6 +1155,7 @@ function bind() {
 /* ============== START ============== */
 render();
 syncAll();
+pullFromCloud();
 </script>
 </body>
 </html>
