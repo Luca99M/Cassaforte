@@ -86,8 +86,8 @@
   .status { font-size:13px; font-weight:700; }
   .ok { color:#16a34a; } .off { color:#dc2626; }
 
-  .modal-bg { position:fixed; inset:0; background:rgba(0,0,0,.55); display:flex; align-items:center; justify-content:center; padding:16px; z-index:50; }
-  .modal { background:#fff; border-radius:16px; padding:18px; width:100%; max-width:380px; }
+  .modal-bg { position:fixed; inset:0; background:rgba(0,0,0,.55); display:flex; align-items:center; justify-content:center; padding:16px; z-index:50; overflow-y:auto; }
+  .modal { background:#fff; border-radius:16px; padding:18px; width:100%; max-width:420px; max-height:94vh; overflow-y:auto; margin:auto; }
   .pw-dots { font-size:34px; letter-spacing:8px; text-align:center; min-height:44px; }
   .err { color:#dc2626; font-weight:700; text-align:center; }
 
@@ -530,8 +530,8 @@ function renderPasswordModal() {
   return '' +
   '<div class="modal-bg" id="pwbg">' +
     '<div class="modal">' +
-      '<h2 class="center">Password amministratore</h2>' +
-      '<p class="muted center small mt-s">Richiesta per operazioni di Controllo</p>' +
+      '<h2 class="center">🔒 Password</h2>' +
+      '<p class="muted center small mt-s">Serve per aggiungere o rimuovere fondi</p>' +
       '<div class="pw-dots mt">' + (dots || '&nbsp;') + '</div>' +
       (state.pwError ? '<div class="err">' + escapeHtml(state.pwError) + '</div>' : '') +
       '<div class="keys mt">' +
@@ -540,9 +540,10 @@ function renderPasswordModal() {
         }).join('') +
         '<button class="key del" data-pw="back">⌫</button>' +
         '<button class="key" data-pw="0">0</button>' +
-        '<button class="key green" style="color:#fff" data-pw="ok">OK</button>' +
+        '<button class="key" data-pw="clear">C</button>' +
       '</div>' +
-      '<button class="btn-big slate mt" style="font-size:18px;padding:14px" data-pw="cancel">Annulla</button>' +
+      '<button class="save-btn mt" style="background:#16a34a" data-pw="ok">✅ CONFERMA</button>' +
+      '<button class="btn-big slate mt-s" style="font-size:18px;padding:14px" data-pw="cancel">Annulla</button>' +
     '</div>' +
   '</div>';
 }
@@ -1005,6 +1006,7 @@ function bind() {
       var k = el.getAttribute('data-pw');
       if (k === 'cancel') { state.pwAction = null; state.pwInput = ''; state.pwError = ''; render(); return; }
       if (k === 'back') { state.pwInput = state.pwInput.slice(0, -1); render(); return; }
+      if (k === 'clear') { state.pwInput = ''; state.pwError = ''; render(); return; }
       if (k === 'ok') {
         if (state.pwInput === ADMIN_PW) {
           var act = state.pwAction;
