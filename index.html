@@ -1,0 +1,1091 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Cassaforte</title>
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    font-family: -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    background: #0f172a;
+    color: #1e293b;
+    user-select: none;
+    overscroll-behavior: none;
+  }
+  #app { min-height: 100vh; padding: 14px; max-width: 1100px; margin: 0 auto; }
+  .card { background: #fff; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,.3); padding: 18px; }
+  .row { display: flex; align-items: center; justify-content: space-between; }
+  h1 { font-size: 26px; color: #0f172a; }
+  h2 { font-size: 22px; color: #0f172a; }
+  .muted { color: #64748b; }
+  .small { font-size: 13px; }
+  .center { text-align: center; }
+  .mt { margin-top: 14px; }
+  .mt-s { margin-top: 8px; }
+  .gear { font-size: 26px; background: none; border: none; cursor: pointer; }
+
+  button { font-family: inherit; cursor: pointer; border: none; }
+  input { font-family: inherit; font-size: 18px; }
+
+  .btn-big {
+    width: 100%; border-radius: 16px; color: #fff; font-weight: 800;
+    font-size: 26px; padding: 26px 16px; box-shadow: 0 6px 16px rgba(0,0,0,.18);
+    transition: transform .05s;
+  }
+  .btn-big:active { transform: scale(.98); }
+  .green { background: #16a34a; } .green:active { background: #15803d; }
+  .red { background: #dc2626; } .red:active { background: #b91c1c; }
+  .blue { background: #2563eb; } .blue:active { background: #1d4ed8; }
+  .slate { background: #475569; } .slate:active { background: #334155; }
+  .amber { background: #d97706; } .amber:active { background: #b45309; }
+
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .grid4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  @media (max-width: 720px) { .grid4 { grid-template-columns: 1fr 1fr; } }
+
+  .user-btn {
+    border-radius: 18px; color: #fff; font-weight: 800; font-size: 30px;
+    padding: 40px 10px; background: #2563eb; box-shadow: 0 6px 16px rgba(0,0,0,.18);
+  }
+  .user-btn:active { transform: scale(.98); }
+  .uc0 { background:#2563eb;} .uc1{background:#0891b2;} .uc2{background:#7c3aed;} .uc3{background:#0d9488;}
+
+  .last-op { background: #f1f5f9; border-radius: 12px; padding: 14px; }
+  .pill { display:inline-block; padding:3px 10px; border-radius:999px; font-size:12px; font-weight:700; }
+  .pill-in { background:#dcfce7; color:#166534; }
+  .pill-out { background:#fee2e2; color:#991b1b; }
+  .pill-ctrl { background:#fef3c7; color:#92400e; }
+
+  .display { background:#f1f5f9; border-radius:12px; padding:18px; text-align:right; }
+  .display .num { font-size:54px; font-weight:800; color:#0f172a; line-height:1; }
+  .keys { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:10px; }
+  .key { font-size:30px; font-weight:800; padding:20px 0; border-radius:14px; background:#fff; border:1px solid #e2e8f0; color:#0f172a; }
+  .key:active { background:#f1f5f9; }
+  .key.del { background:#dc2626; color:#fff; border:none; }
+
+  .field-label { font-size:14px; font-weight:700; color:#334155; margin-bottom:6px; display:block; }
+  .text-input { width:100%; padding:14px; border:2px solid #cbd5e1; border-radius:12px; outline:none; }
+  .text-input:focus { border-color:#2563eb; }
+
+  .save-btn { width:100%; padding:22px; border-radius:14px; background:#2563eb; color:#fff; font-size:24px; font-weight:800; }
+  .save-btn:disabled { background:#cbd5e1; }
+
+  .list-item { display:flex; justify-content:space-between; align-items:center; padding:12px; border-radius:12px; margin-bottom:8px; }
+  .li-in { background:#f0fdf4; } .li-out { background:#fef2f2; } .li-ctrl { background:#fffbeb; }
+  .li-del { background:#f1f5f9; opacity:.6; text-decoration: line-through; }
+
+  .filters { display:flex; flex-wrap:wrap; gap:8px; }
+  .chip { padding:8px 14px; border-radius:999px; background:#e2e8f0; color:#334155; font-weight:700; font-size:14px; }
+  .chip.active { background:#2563eb; color:#fff; }
+
+  .topbar { display:flex; align-items:center; gap:10px; margin-bottom:14px; }
+  .back { font-size:22px; background:#e2e8f0; border-radius:12px; padding:8px 14px; font-weight:800; color:#0f172a; }
+
+  .status { font-size:13px; font-weight:700; }
+  .ok { color:#16a34a; } .off { color:#dc2626; }
+
+  .modal-bg { position:fixed; inset:0; background:rgba(0,0,0,.55); display:flex; align-items:center; justify-content:center; padding:16px; z-index:50; }
+  .modal { background:#fff; border-radius:16px; padding:18px; width:100%; max-width:380px; }
+  .pw-dots { font-size:34px; letter-spacing:8px; text-align:center; min-height:44px; }
+  .err { color:#dc2626; font-weight:700; text-align:center; }
+
+  .mic { width:130px; height:130px; border-radius:50%; background:#7c3aed; color:#fff;
+         font-size:58px; display:flex; align-items:center; justify-content:center; margin:18px auto;
+         animation:pulse 1.2s infinite; }
+  @keyframes pulse {
+    0% { box-shadow:0 0 0 0 rgba(124,58,237,.55); }
+    70% { box-shadow:0 0 0 26px rgba(124,58,237,0); }
+    100% { box-shadow:0 0 0 0 rgba(124,58,237,0); }
+  }
+  .purple { background:#7c3aed; } .purple:active { background:#6d28d9; }
+  .heard { background:#f5f3ff; border:1px solid #ddd6fe; border-radius:12px; padding:14px; font-size:18px; }
+  .narrow { max-width:460px; margin:0 auto; }
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+"use strict";
+
+/* ============== CONFIG ============== */
+var SUPABASE_URL = 'https://dwjoqezrywszsqzdzxge.supabase.co';
+var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR3am9xZXpyeXdzenNxemR6eGdlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAzNjA2NTQsImV4cCI6MjA5NTkzNjY1NH0.cRwNsJHZbZK_96Vg7qa5i2q5lRvnMIqite-LUt3zUlE';
+var TABLE = 'transactions';
+
+var USERS = ['Andrea', 'Massimo', 'Marzio', 'Marco'];
+var ADMIN_PW = '1980';
+
+/* ============== STORAGE ============== */
+var K_TX = 'cassaforte_tx_v1';
+var K_AUDIT = 'cassaforte_audit_v1';
+var K_INIT = 'cassaforte_initial_v1';
+
+function loadTx() {
+  try { return JSON.parse(localStorage.getItem(K_TX) || '[]'); }
+  catch (e) { return []; }
+}
+function saveTx(arr) {
+  localStorage.setItem(K_TX, JSON.stringify(arr));
+}
+function loadAudit() {
+  try { return JSON.parse(localStorage.getItem(K_AUDIT) || '[]'); }
+  catch (e) { return []; }
+}
+function pushAudit(entry) {
+  var a = loadAudit();
+  a.unshift(entry);
+  localStorage.setItem(K_AUDIT, JSON.stringify(a));
+}
+function getInitial() {
+  return parseFloat(localStorage.getItem(K_INIT) || '0') || 0;
+}
+
+/* ============== HELPERS ============== */
+function uid() {
+  return Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8);
+}
+function nowISO() { return new Date().toISOString(); }
+
+function eur(n) {
+  return new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(n);
+}
+function fmtDateTime(iso) {
+  var d = new Date(iso);
+  return d.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric' }) +
+         ' ' + d.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+}
+function typeLabel(t) {
+  if (t === 'deposito') return 'Deposito';
+  if (t === 'prelievo') return 'Prelievo';
+  return 'Controllo';
+}
+function escapeHtml(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+/* signed amount stored directly: deposito + , prelievo - , controllo +/- */
+function balance(txs) {
+  var b = getInitial();
+  for (var i = 0; i < txs.length; i++) {
+    if (!txs[i].deleted) b += txs[i].amount;
+  }
+  return b;
+}
+function balanceAtDate(txs, dateISO) {
+  var limit = new Date(dateISO).getTime();
+  var b = getInitial();
+  for (var i = 0; i < txs.length; i++) {
+    var t = txs[i];
+    var created = new Date(t.created_at).getTime();
+    if (created > limit) continue;
+    // include if not deleted, OR deleted after the requested date
+    if (t.deleted && t.deleted_at && new Date(t.deleted_at).getTime() <= limit) continue;
+    b += t.amount;
+  }
+  return b;
+}
+
+/* ============== SYNC (Supabase, best-effort) ============== */
+var syncing = false;
+
+function buildPayload(t) {
+  return {
+    user_name: t.user_name,
+    transaction_type: t.transaction_type,
+    amount: t.amount,
+    reason: t.reason || null,
+    created_at: t.created_at,
+    updated_at: t.updated_at,
+    local_id: t.local_id,
+    deleted: !!t.deleted,
+    deleted_at: t.deleted_at || null
+  };
+}
+
+function syncAll() {
+  if (syncing || !navigator.onLine) return Promise.resolve();
+  syncing = true;
+  var txs = loadTx();
+  var pending = txs.filter(function (t) { return !t.synced; });
+  if (pending.length === 0) { syncing = false; return Promise.resolve(); }
+
+  var chain = Promise.resolve();
+  pending.forEach(function (t) {
+    chain = chain.then(function () {
+      return fetch(SUPABASE_URL + '/rest/v1/' + TABLE + '?on_conflict=local_id', {
+        method: 'POST',
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': 'Bearer ' + SUPABASE_KEY,
+          'Content-Type': 'application/json',
+          'Prefer': 'resolution=merge-duplicates'
+        },
+        body: JSON.stringify(buildPayload(t))
+      }).then(function (res) {
+        if (res.ok || res.status === 409) {
+          var all = loadTx();
+          for (var i = 0; i < all.length; i++) {
+            if (all[i].local_id === t.local_id) { all[i].synced = true; break; }
+          }
+          saveTx(all);
+        }
+      }).catch(function () { /* offline, riproverà */ });
+    });
+  });
+
+  return chain.then(function () {
+    syncing = false;
+    if (state.screen === 'home' || state.screen === 'total') render();
+  });
+}
+
+window.addEventListener('online', function () { syncAll(); render(); });
+window.addEventListener('offline', function () { render(); });
+
+/* ============== TRANSACTION OPS ============== */
+function addTransaction(opts) {
+  // opts: user_name, transaction_type, amount(signed), reason
+  var t = {
+    id: uid(),
+    local_id: uid(),
+    user_name: opts.user_name,
+    transaction_type: opts.transaction_type,
+    amount: opts.amount,
+    reason: opts.reason || '',
+    created_at: nowISO(),
+    updated_at: nowISO(),
+    synced: false,
+    deleted: false,
+    deleted_at: null
+  };
+  var txs = loadTx();
+  txs.unshift(t);
+  saveTx(txs);
+  pushAudit({
+    ts: nowISO(), action: 'CREAZIONE', local_id: t.local_id,
+    user_name: t.user_name, dettaglio: typeLabel(t.transaction_type) + ' ' + eur(t.amount) + ' — ' + (t.reason || '')
+  });
+  syncAll();
+  return t;
+}
+
+function editTransaction(local_id, newSignedAmount, newReason) {
+  var txs = loadTx();
+  for (var i = 0; i < txs.length; i++) {
+    if (txs[i].local_id === local_id) {
+      var before = { amount: txs[i].amount, reason: txs[i].reason };
+      txs[i].amount = newSignedAmount;
+      txs[i].reason = newReason;
+      txs[i].updated_at = nowISO();
+      txs[i].synced = false;
+      saveTx(txs);
+      pushAudit({
+        ts: nowISO(), action: 'MODIFICA', local_id: local_id, user_name: txs[i].user_name,
+        dettaglio: 'Da ' + eur(before.amount) + ' "' + (before.reason || '') + '" a ' +
+                   eur(newSignedAmount) + ' "' + (newReason || '') + '"'
+      });
+      syncAll();
+      return;
+    }
+  }
+}
+
+function deleteTransaction(local_id) {
+  var txs = loadTx();
+  for (var i = 0; i < txs.length; i++) {
+    if (txs[i].local_id === local_id) {
+      txs[i].deleted = true;
+      txs[i].deleted_at = nowISO();
+      txs[i].updated_at = nowISO();
+      txs[i].synced = false;
+      saveTx(txs);
+      pushAudit({
+        ts: nowISO(), action: 'ELIMINAZIONE', local_id: local_id, user_name: txs[i].user_name,
+        dettaglio: typeLabel(txs[i].transaction_type) + ' ' + eur(txs[i].amount) + ' — ' + (txs[i].reason || '')
+      });
+      syncAll();
+      return;
+    }
+  }
+}
+
+function lastOpForUser(user) {
+  var txs = loadTx();
+  for (var i = 0; i < txs.length; i++) {
+    if (!txs[i].deleted && txs[i].user_name === user) return txs[i];
+  }
+  return null;
+}
+function lastOpAny() {
+  var txs = loadTx();
+  for (var i = 0; i < txs.length; i++) { if (!txs[i].deleted) return txs[i]; }
+  return null;
+}
+
+/* ============== CSV EXPORT ============== */
+function exportCSV() {
+  var txs = loadTx();
+  var rows = [['Data', 'Ora', 'Utente', 'Tipo', 'Motivo', 'Importo', 'Stato']];
+  txs.forEach(function (t) {
+    var d = new Date(t.created_at);
+    rows.push([
+      d.toLocaleDateString('it-IT'),
+      d.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }),
+      t.user_name,
+      typeLabel(t.transaction_type),
+      (t.reason || '').replace(/;/g, ','),
+      String(t.amount).replace('.', ','),
+      t.deleted ? 'ELIMINATA' : 'attiva'
+    ]);
+  });
+  var csv = rows.map(function (r) { return r.join(';'); }).join('\n');
+  var blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'cassaforte-' + new Date().toISOString().slice(0, 10) + '.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+/* ============== RICONOSCIMENTO VOCALE ============== */
+function parseVoice(text) {
+  var raw = (text || '').trim();
+  var lower = raw.toLowerCase();
+
+  // tipo operazione
+  // AGGIUNGI (deposito): ho messo, metto, aggiungo, deposito, incasso, verso, vendita...
+  var type = null;
+  if (/\b(mett\w*|mess\w*|aggiung\w*|deposit\w*|incass\w*|vers\w*|ricev\w*|vendit\w*|vendut\w*|guadagn\w*|entrat\w*)\b/.test(lower)) type = 'deposito';
+  // PRELEVA (prelievo): ho tolto, prendo, preso, rimuovo, prelevo, ritiro, pago...
+  if (/\b(tolt\w*|tolg\w*|togl\w*|prend\w*|pres\w*|prelev\w*|prelievo|rimuov\w*|rimoss\w*|ritir\w*|pag\w*|spes\w*|compr\w*|acquist\w*|uscit\w*|consegn\w*)\b/.test(lower)) type = 'prelievo';
+
+  // importo: tolgo i punti delle migliaia, tengo la virgola decimale
+  var cleaned = lower.replace(/(\d)\.(?=\d{3}\b)/g, '$1');
+  var m = cleaned.match(/(\d+(?:,\d{1,2})?)/);
+  var amount = m ? parseFloat(m[1].replace(',', '.')) : null;
+
+  // motivo: tutto ciò che segue "per"; altrimenti pulisco le parole comando
+  var reason = '';
+  var idx = lower.indexOf(' per ');
+  if (idx >= 0) {
+    reason = raw.slice(idx + 5).trim();
+  }
+  if (!reason) {
+    reason = raw
+      .replace(/\b(prendo|prendi|metto|metti|aggiungo|aggiungi|prelevo|prelievo|prelevare|deposito|incasso|verso|versare|pago|pagare|ritiro|tolgo|soldi|denaro|contanti|euro|€)\b/gi, ' ')
+      .replace(/\d+(?:[.,]\d{1,2})?/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+  return { type: type, amount: amount, reason: reason };
+}
+
+var recognition = null;
+var recBusy = false;
+
+function startRecognition() {
+  var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) {
+    state.voiceError = 'Riconoscimento vocale non disponibile su questo dispositivo. Usa l\'inserimento manuale.';
+    render();
+    return;
+  }
+  if (recBusy) return;
+  recBusy = true;
+  state.voiceError = '';
+  render();
+  try {
+    recognition = new SR();
+    recognition.lang = 'it-IT';
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+    recognition.onresult = function (e) {
+      var t = e.results[0][0].transcript;
+      var p = parseVoice(t);
+      state.voiceText = t;
+      if (p.type) state.entryType = p.type;
+      if (!state.entryType) state.entryType = 'prelievo';
+      state.amount = (p.amount != null) ? String(p.amount) : '';
+      state.reason = p.reason || '';
+      recBusy = false;
+      state.screen = 'confirm';
+      render();
+    };
+    recognition.onerror = function (e) {
+      recBusy = false;
+      var msg;
+      if (e.error === 'network') msg = 'Serve Internet per il riconoscimento vocale. Usa l\'inserimento manuale.';
+      else if (e.error === 'not-allowed' || e.error === 'service-not-allowed') msg = 'Microfono non autorizzato. Abilita il microfono in Fully Kiosk.';
+      else if (e.error === 'no-speech') msg = 'Non ho sentito nulla. Riprova.';
+      else msg = 'Problema con il microfono. Riprova o usa il manuale.';
+      state.voiceError = msg;
+      render();
+    };
+    recognition.onend = function () { recBusy = false; };
+    recognition.start();
+  } catch (err) {
+    recBusy = false;
+    state.voiceError = 'Impossibile avviare il microfono.';
+    render();
+  }
+}
+
+function stopRecognition() {
+  try { if (recognition) recognition.abort(); } catch (e) {}
+  recBusy = false;
+}
+
+/* ============== STATE ============== */
+var state = {
+  screen: 'home',     // home | user | total | history | audit
+  user: null,
+  entryType: null,    // 'deposito' | 'prelievo' | 'controllo'
+  entrySign: 1,       // for controllo: +1 / -1
+  amount: '',
+  reason: '',
+  editingId: null,
+  filter: 'Tutti',
+  search: '',
+  pwError: '',
+  pwInput: '',
+  pwAction: null,     // pending action after password
+  voiceText: '',
+  voiceError: '',
+  entryStep: 'amount'   // 'amount' | 'reason'
+};
+
+function go(screen) { state.screen = screen; render(); }
+
+/* ============== PASSWORD MODAL ============== */
+function renderPasswordModal() {
+  var dots = state.pwInput.replace(/./g, '●');
+  return '' +
+  '<div class="modal-bg" id="pwbg">' +
+    '<div class="modal">' +
+      '<h2 class="center">Password amministratore</h2>' +
+      '<p class="muted center small mt-s">Richiesta per operazioni di Controllo</p>' +
+      '<div class="pw-dots mt">' + (dots || '&nbsp;') + '</div>' +
+      (state.pwError ? '<div class="err">' + escapeHtml(state.pwError) + '</div>' : '') +
+      '<div class="keys mt">' +
+        ['1','2','3','4','5','6','7','8','9'].map(function (k) {
+          return '<button class="key" data-pw="' + k + '">' + k + '</button>';
+        }).join('') +
+        '<button class="key del" data-pw="back">⌫</button>' +
+        '<button class="key" data-pw="0">0</button>' +
+        '<button class="key green" style="color:#fff" data-pw="ok">OK</button>' +
+      '</div>' +
+      '<button class="btn-big slate mt" style="font-size:18px;padding:14px" data-pw="cancel">Annulla</button>' +
+    '</div>' +
+  '</div>';
+}
+
+/* ============== SCREENS ============== */
+function statusLine() {
+  return navigator.onLine
+    ? '<span class="status ok">● Online — sincronizza in automatico</span>'
+    : '<span class="status off">● Offline — salvataggio locale, sincronizza appena torna la rete</span>';
+}
+
+function renderHome() {
+  var last = lastOpAny();
+  var lastHtml = '';
+  if (last) {
+    var cls = last.amount >= 0 ? 'pill-in' : 'pill-out';
+    if (last.transaction_type === 'controllo') cls = 'pill-ctrl';
+    lastHtml =
+      '<div class="last-op mt">' +
+        '<div class="small muted" style="font-weight:700">ULTIMA OPERAZIONE</div>' +
+        '<div class="row mt-s">' +
+          '<div>' +
+            '<div style="font-weight:800;font-size:18px">' + escapeHtml(last.user_name) +
+              ' <span class="pill ' + cls + '">' + typeLabel(last.transaction_type) + '</span></div>' +
+            '<div class="small muted">' + escapeHtml(last.reason || '—') + '</div>' +
+            '<div class="small muted">' + fmtDateTime(last.created_at) + '</div>' +
+          '</div>' +
+          '<div style="font-size:24px;font-weight:800;color:' + (last.amount >= 0 ? '#16a34a' : '#dc2626') + '">' +
+            (last.amount >= 0 ? '+' : '') + eur(last.amount) + '</div>' +
+        '</div>' +
+      '</div>';
+  } else {
+    lastHtml = '<div class="last-op mt center muted">Nessuna operazione registrata</div>';
+  }
+
+  var unsynced = loadTx().filter(function (t) { return !t.synced; }).length;
+
+  return '' +
+  '<div class="card">' +
+    '<div class="row">' +
+      '<h1>🔒 Cassaforte</h1>' +
+      '<button class="gear" data-act="settings">⚙️</button>' +
+    '</div>' +
+    '<div class="mt-s">' + statusLine() +
+      (unsynced ? ' <span class="small muted">(' + unsynced + ' da sincronizzare)</span>' : '') +
+    '</div>' +
+
+    '<div class="grid4 mt">' +
+      USERS.map(function (u, i) {
+        return '<button class="user-btn uc' + i + '" data-user="' + escapeHtml(u) + '">' + escapeHtml(u) + '</button>';
+      }).join('') +
+    '</div>' +
+
+    lastHtml +
+
+    '<div class="grid2 mt">' +
+      '<button class="btn-big amber" data-act="total">💰 Vedi totale soldi</button>' +
+      '<button class="btn-big slate" data-act="history">📋 Storico</button>' +
+    '</div>' +
+  '</div>';
+}
+
+function renderUser() {
+  var u = state.user;
+  var last = lastOpForUser(u);
+  var lastHtml;
+  if (last) {
+    lastHtml =
+      '<div class="last-op mt">' +
+        '<div class="small muted" style="font-weight:700">ULTIMA OPERAZIONE DI ' + escapeHtml(u).toUpperCase() + '</div>' +
+        '<div class="row mt-s">' +
+          '<div>' +
+            '<div style="font-weight:800;font-size:18px;color:' + (last.amount >= 0 ? '#16a34a' : '#dc2626') + '">' +
+              (last.amount >= 0 ? '+' : '') + eur(last.amount) + '</div>' +
+            '<div class="small muted">' + escapeHtml(last.reason || '—') + '</div>' +
+            '<div class="small muted">' + fmtDateTime(last.created_at) + '</div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="grid2 mt-s">' +
+          '<button class="btn-big blue" style="font-size:18px;padding:14px" data-edit="' + last.local_id + '">✏️ Modifica</button>' +
+          '<button class="btn-big red" style="font-size:18px;padding:14px" data-del="' + last.local_id + '">🗑️ Elimina</button>' +
+        '</div>' +
+      '</div>';
+  } else {
+    lastHtml = '<div class="last-op mt center muted">Nessuna operazione di ' + escapeHtml(u) + '</div>';
+  }
+
+  return '' +
+  '<div class="card">' +
+    '<div class="topbar"><button class="back" data-act="home">←</button><h1>Ciao ' + escapeHtml(u) + '</h1></div>' +
+    '<p class="muted" style="font-size:18px">Cosa devi fare?</p>' +
+    '<button class="btn-big purple mt" data-voice="1">🎤 Dillo a voce</button>' +
+    '<p class="center muted small mt-s">Es: "prelievo 200 euro per pagare operaio Paolo"</p>' +
+    '<div class="grid2 mt">' +
+      '<button class="btn-big green" data-entry="deposito">💵 Aggiungi soldi</button>' +
+      '<button class="btn-big red" data-entry="prelievo">💸 Preleva soldi</button>' +
+    '</div>' +
+    lastHtml +
+  '</div>';
+}
+
+function renderTotal() {
+  var txs = loadTx();
+  var bal = balance(txs);
+  var today = new Date().toISOString().slice(0, 10);
+  return '' +
+  '<div class="card">' +
+    '<div class="topbar"><button class="back" data-act="home">←</button><h1>💰 Totale Cassaforte</h1></div>' +
+    '<div class="center mt">' +
+      '<div class="muted small">SALDO ATTUALE</div>' +
+      '<div style="font-size:56px;font-weight:800;color:' + (bal >= 0 ? '#16a34a' : '#dc2626') + '">' + eur(bal) + '</div>' +
+    '</div>' +
+
+    '<div class="last-op mt">' +
+      '<div class="small muted" style="font-weight:700">RICOSTRUISCI SALDO A UNA DATA</div>' +
+      '<div class="row mt-s">' +
+        '<input class="text-input" type="date" id="reconDate" value="' + today + '" style="max-width:220px">' +
+        '<div id="reconResult" style="font-size:22px;font-weight:800">' + eur(bal) + '</div>' +
+      '</div>' +
+    '</div>' +
+
+    '<p class="muted small center mt">Le operazioni qui sotto sono di <b>Controllo</b> e richiedono password.</p>' +
+    '<div class="grid2 mt-s">' +
+      '<button class="btn-big green" data-ctrl="add">➕ Aggiungi fondi</button>' +
+      '<button class="btn-big red" data-ctrl="rem">➖ Rimuovi fondi</button>' +
+    '</div>' +
+  '</div>';
+}
+
+function renderEntry() {
+  var isCtrl = state.entryType === 'controllo';
+  var who = isCtrl ? 'Controllo' : state.user;
+  var title;
+  if (isCtrl) title = state.entrySign > 0 ? '➕ Aggiungi fondi (Controllo)' : '➖ Rimuovi fondi (Controllo)';
+  else title = state.entryType === 'deposito' ? '💵 Aggiungi soldi' : '💸 Preleva soldi';
+
+  var backAct = isCtrl ? 'total' : 'userback';
+  var amtOk = state.amount && parseFloat(state.amount) > 0;
+
+  // PASSO 1: cifra
+  if (state.entryStep === 'amount') {
+    var keys = ['1','2','3','4','5','6','7','8','9','.','0','back'];
+    return '' +
+    '<div class="card">' +
+      '<div class="topbar"><button class="back" data-act="' + backAct + '">←</button><h2>' + title + '</h2></div>' +
+      '<div class="small muted">Passo 1 di 2 — Quanto?</div>' +
+      '<div class="narrow">' +
+        '<div class="display mt">' +
+          '<div class="num">' + (state.amount || '0') + '</div><div class="muted">€</div>' +
+        '</div>' +
+        '<div class="keys">' +
+          keys.map(function (k) {
+            if (k === 'back') return '<button class="key del" data-num="back">⌫</button>';
+            return '<button class="key" data-num="' + k + '">' + k + '</button>';
+          }).join('') +
+        '</div>' +
+        '<button class="save-btn mt" id="avantiBtn"' + (amtOk ? '' : ' disabled') + '>Avanti →</button>' +
+      '</div>' +
+    '</div>';
+  }
+
+  // PASSO 2: motivo (tastiera già pronta)
+  var canSave = amtOk && state.reason && state.reason.trim();
+  var segno = (state.entryType === 'deposito' || (isCtrl && state.entrySign > 0)) ? '+' : '−';
+  var colore = segno === '+' ? '#16a34a' : '#dc2626';
+  return '' +
+  '<div class="card">' +
+    '<div class="topbar"><button class="back" data-act="entryAmount">←</button><h2>' + title + '</h2></div>' +
+    '<div class="narrow">' +
+      '<div class="display" style="display:flex;align-items:center;justify-content:space-between">' +
+        '<span class="muted">Importo</span>' +
+        '<span class="num" style="font-size:38px;color:' + colore + '">' + segno + ' ' + (state.amount || '0') + ' €</span>' +
+      '</div>' +
+      '<div class="mt">' +
+        '<label class="field-label">Perché? Riassumi cosa è stato fatto</label>' +
+        '<input class="text-input" id="reasonInput" placeholder="Es: pagare operaio Paolo, vendita formaggio..." value="' + escapeHtml(state.reason) + '" style="font-size:20px;padding:16px">' +
+      '</div>' +
+      '<button class="save-btn mt" id="saveBtn"' + (canSave ? '' : ' disabled') + '>💾 SALVA</button>' +
+    '</div>' +
+  '</div>';
+}
+
+function renderEdit() {
+  var txs = loadTx();
+  var t = null;
+  for (var i = 0; i < txs.length; i++) { if (txs[i].local_id === state.editingId) { t = txs[i]; break; } }
+  if (!t) { state.screen = 'home'; return renderHome(); }
+  var disabled = !state.amount || parseFloat(state.amount) <= 0 || !state.reason.trim();
+  var keys = ['1','2','3','4','5','6','7','8','9','.','0','back'];
+
+  return '' +
+  '<div class="card">' +
+    '<div class="topbar"><button class="back" data-act="home">←</button><h2>✏️ Modifica operazione</h2></div>' +
+    '<div class="small muted">' + escapeHtml(t.user_name) + ' — ' + typeLabel(t.transaction_type) +
+      ' — ' + fmtDateTime(t.created_at) + '</div>' +
+    '<div class="display mt">' +
+      '<div class="num">' + (state.amount || '0') + '</div><div class="muted">€</div>' +
+    '</div>' +
+    '<div class="keys">' +
+      keys.map(function (k) {
+        if (k === 'back') return '<button class="key del" data-num="back">⌫</button>';
+        return '<button class="key" data-num="' + k + '">' + k + '</button>';
+      }).join('') +
+    '</div>' +
+    '<div class="mt">' +
+      '<label class="field-label">Motivo</label>' +
+      '<input class="text-input" id="reasonInput" value="' + escapeHtml(state.reason) + '">' +
+    '</div>' +
+    '<button class="save-btn mt" id="saveEditBtn"' + (disabled ? ' disabled' : '') + '>💾 SALVA MODIFICA</button>' +
+  '</div>';
+}
+
+function renderHistory() {
+  var txs = loadTx();
+  var filters = ['Tutti'].concat(USERS).concat(['Controllo']);
+  var filtered = txs.filter(function (t) {
+    var okF = true;
+    if (state.filter === 'Controllo') okF = (t.transaction_type === 'controllo');
+    else if (state.filter !== 'Tutti') okF = (t.user_name === state.filter);
+    var okS = true;
+    if (state.search.trim()) {
+      var q = state.search.toLowerCase();
+      okS = (t.reason || '').toLowerCase().indexOf(q) >= 0 ||
+            (t.user_name || '').toLowerCase().indexOf(q) >= 0;
+    }
+    return okF && okS;
+  });
+
+  var items = filtered.length ? filtered.map(function (t) {
+    var cls = t.deleted ? 'li-del' : (t.transaction_type === 'controllo' ? 'li-ctrl' : (t.amount >= 0 ? 'li-in' : 'li-out'));
+    return '<div class="list-item ' + cls + '">' +
+      '<div>' +
+        '<div style="font-weight:800">' + escapeHtml(t.user_name) + ' · ' + typeLabel(t.transaction_type) +
+          (t.deleted ? ' <span class="pill pill-out">ELIMINATA</span>' : '') + '</div>' +
+        '<div class="small muted">' + escapeHtml(t.reason || '—') + '</div>' +
+        '<div class="small muted">' + fmtDateTime(t.created_at) + '</div>' +
+      '</div>' +
+      '<div style="font-size:20px;font-weight:800;color:' + (t.amount >= 0 ? '#16a34a' : '#dc2626') + '">' +
+        (t.amount >= 0 ? '+' : '') + eur(t.amount) + '</div>' +
+    '</div>';
+  }).join('') : '<div class="center muted mt">Nessun risultato</div>';
+
+  return '' +
+  '<div class="card">' +
+    '<div class="topbar"><button class="back" data-act="home">←</button><h1>📋 Storico</h1></div>' +
+    '<input class="text-input" id="searchInput" placeholder="🔎 Cerca per motivo o utente..." value="' + escapeHtml(state.search) + '">' +
+    '<div class="filters mt">' +
+      filters.map(function (f) {
+        return '<button class="chip ' + (state.filter === f ? 'active' : '') + '" data-filter="' + escapeHtml(f) + '">' + escapeHtml(f) + '</button>';
+      }).join('') +
+    '</div>' +
+    '<div class="grid2 mt">' +
+      '<button class="btn-big blue" style="font-size:18px;padding:14px" data-act="export">⬇️ Esporta CSV</button>' +
+      '<button class="btn-big slate" style="font-size:18px;padding:14px" data-act="audit">🧾 Log modifiche</button>' +
+    '</div>' +
+    '<div class="mt">' + items + '</div>' +
+  '</div>';
+}
+
+function renderAudit() {
+  var a = loadAudit();
+  var items = a.length ? a.map(function (e) {
+    return '<div class="list-item li-ctrl">' +
+      '<div>' +
+        '<div style="font-weight:800">' + escapeHtml(e.action) + ' · ' + escapeHtml(e.user_name || '') + '</div>' +
+        '<div class="small muted">' + escapeHtml(e.dettaglio || '') + '</div>' +
+        '<div class="small muted">' + fmtDateTime(e.ts) + '</div>' +
+      '</div>' +
+    '</div>';
+  }).join('') : '<div class="center muted mt">Nessuna modifica registrata</div>';
+  return '' +
+  '<div class="card">' +
+    '<div class="topbar"><button class="back" data-act="history">←</button><h1>🧾 Log modifiche</h1></div>' +
+    '<p class="muted small">Tracciabilità completa: creazioni, modifiche ed eliminazioni.</p>' +
+    '<div class="mt">' + items + '</div>' +
+  '</div>';
+}
+
+/* ============== RENDER + EVENTS ============== */
+function renderListening() {
+  return '' +
+  '<div class="card center">' +
+    '<div class="topbar"><button class="back" data-act="userback">←</button><h1>🎤 Ti ascolto</h1></div>' +
+    (state.voiceError
+      ? '<div class="mic" style="background:#dc2626;animation:none">🎤</div>' +
+        '<div class="err mt">' + escapeHtml(state.voiceError) + '</div>' +
+        '<div class="grid2 mt">' +
+          '<button class="btn-big purple" data-act="retry">🔁 Riprova</button>' +
+          '<button class="btn-big slate" data-act="manual">✍️ Manuale</button>' +
+        '</div>'
+      : '<div class="mic">🎤</div>' +
+        '<p class="muted" style="font-size:18px">Parla adesso...</p>' +
+        '<p class="center muted small mt-s">Es: "prelievo 200 euro per pagare operaio Paolo"</p>' +
+        '<button class="btn-big slate mt" data-act="userback">Annulla</button>'
+    ) +
+  '</div>';
+}
+
+function renderConfirm() {
+  var amtNum = parseFloat(state.amount);
+  var valid = state.amount && amtNum > 0 && state.reason && state.reason.trim();
+  var isDep = state.entryType === 'deposito';
+  return '' +
+  '<div class="card">' +
+    '<div class="topbar"><button class="back" data-act="userback">←</button><h1>Confermi?</h1></div>' +
+    (state.voiceText ? '<div class="heard">🗣️ "' + escapeHtml(state.voiceText) + '"</div>' : '') +
+
+    '<div class="mt"><label class="field-label">Tipo operazione</label>' +
+      '<div class="grid2">' +
+        '<button class="btn-big ' + (isDep ? 'green' : 'slate') + '" style="font-size:18px;padding:14px" data-ctype="deposito">💵 Aggiungi</button>' +
+        '<button class="btn-big ' + (!isDep ? 'red' : 'slate') + '" style="font-size:18px;padding:14px" data-ctype="prelievo">💸 Preleva</button>' +
+      '</div>' +
+    '</div>' +
+
+    '<div class="display mt">' +
+      '<div class="num">' + (state.amount || '0') + '</div><div class="muted">€</div>' +
+    '</div>' +
+
+    '<div class="last-op mt">' +
+      '<div class="small muted" style="font-weight:700">MOTIVO</div>' +
+      '<div style="font-size:18px;margin-top:4px">' + (state.reason ? escapeHtml(state.reason) : '<span class="muted">— nessun motivo —</span>') + '</div>' +
+    '</div>' +
+
+    (!valid ? '<p class="muted small center mt">Manca importo o motivo: tocca "Modifica" per completare.</p>' : '') +
+
+    '<div class="grid2 mt">' +
+      '<button class="save-btn" id="confirmSave"' + (valid ? '' : ' disabled') + '>✅ Conferma e salva</button>' +
+      '<button class="btn-big blue" data-act="modify">✏️ Modifica</button>' +
+    '</div>' +
+  '</div>';
+}
+
+function render() {
+  var app = document.getElementById('app');
+  var html;
+  switch (state.screen) {
+    case 'home': html = renderHome(); break;
+    case 'user': html = renderUser(); break;
+    case 'total': html = renderTotal(); break;
+    case 'entry': html = renderEntry(); break;
+    case 'edit': html = renderEdit(); break;
+    case 'history': html = renderHistory(); break;
+    case 'audit': html = renderAudit(); break;
+    case 'listening': html = renderListening(); break;
+    case 'confirm': html = renderConfirm(); break;
+    default: html = renderHome();
+  }
+  if (state.pwInput !== null && state.pwAction) html += renderPasswordModal();
+  app.innerHTML = html;
+  bind();
+}
+
+function startEntry(type, sign) {
+  state.entryType = type;
+  state.entrySign = sign || 1;
+  state.amount = '';
+  state.reason = '';
+  state.entryStep = 'amount';
+  state.screen = 'entry';
+  render();
+}
+
+function bind() {
+  var app = document.getElementById('app');
+
+  // generic actions
+  app.querySelectorAll('[data-act]').forEach(function (el) {
+    el.addEventListener('click', function () {
+      var a = el.getAttribute('data-act');
+      if (a === 'home') go('home');
+      else if (a === 'total') go('total');
+      else if (a === 'history') go('history');
+      else if (a === 'audit') go('audit');
+      else if (a === 'userback') { stopRecognition(); state.voiceError = ''; state.screen = 'user'; render(); }
+      else if (a === 'export') exportCSV();
+      else if (a === 'retry') { startRecognition(); }
+      else if (a === 'manual') { stopRecognition(); state.voiceError = ''; startEntry(state.entryType || 'prelievo', (state.entryType === 'deposito') ? 1 : -1); }
+      else if (a === 'modify') { state.entryStep = 'amount'; state.entrySign = (state.entryType === 'deposito') ? 1 : -1; state.screen = 'entry'; render(); }
+      else if (a === 'entryAmount') { state.entryStep = 'amount'; render(); }
+      else if (a === 'settings') {
+        if (confirm('Esportare un backup CSV di tutte le operazioni?')) exportCSV();
+      }
+    });
+  });
+
+  // user buttons
+  app.querySelectorAll('[data-user]').forEach(function (el) {
+    el.addEventListener('click', function () {
+      state.user = el.getAttribute('data-user');
+      go('user');
+    });
+  });
+
+  // user entry (deposito/prelievo)
+  app.querySelectorAll('[data-entry]').forEach(function (el) {
+    el.addEventListener('click', function () {
+      startEntry(el.getAttribute('data-entry'), el.getAttribute('data-entry') === 'deposito' ? 1 : -1);
+    });
+  });
+
+  // voice button
+  app.querySelectorAll('[data-voice]').forEach(function (el) {
+    el.addEventListener('click', function () {
+      state.voiceText = '';
+      state.voiceError = '';
+      state.entryType = null;
+      state.amount = '';
+      state.reason = '';
+      state.screen = 'listening';
+      render();
+      startRecognition();
+    });
+  });
+
+  // confirm: type toggle
+  app.querySelectorAll('[data-ctype]').forEach(function (el) {
+    el.addEventListener('click', function () {
+      state.entryType = el.getAttribute('data-ctype');
+      render();
+    });
+  });
+
+  // confirm: save
+  var confirmSave = document.getElementById('confirmSave');
+  if (confirmSave) {
+    confirmSave.addEventListener('click', function () {
+      var amt = parseFloat(state.amount);
+      if (!amt || amt <= 0 || !state.reason.trim()) return;
+      var signed = state.entryType === 'deposito' ? amt : -amt;
+      addTransaction({
+        user_name: state.user,
+        transaction_type: state.entryType,
+        amount: signed,
+        reason: state.reason.trim()
+      });
+      go('user');
+    });
+  }
+
+  // controllo -> password first
+  app.querySelectorAll('[data-ctrl]').forEach(function (el) {
+    el.addEventListener('click', function () {
+      var sign = el.getAttribute('data-ctrl') === 'add' ? 1 : -1;
+      state.pwInput = '';
+      state.pwError = '';
+      state.pwAction = function () { startEntry('controllo', sign); };
+      render();
+    });
+  });
+
+  // password modal keys
+  app.querySelectorAll('[data-pw]').forEach(function (el) {
+    el.addEventListener('click', function () {
+      var k = el.getAttribute('data-pw');
+      if (k === 'cancel') { state.pwAction = null; state.pwInput = ''; state.pwError = ''; render(); return; }
+      if (k === 'back') { state.pwInput = state.pwInput.slice(0, -1); render(); return; }
+      if (k === 'ok') {
+        if (state.pwInput === ADMIN_PW) {
+          var act = state.pwAction;
+          state.pwAction = null; state.pwInput = ''; state.pwError = '';
+          if (act) act();
+        } else {
+          state.pwError = 'Password non corretta';
+          state.pwInput = '';
+          render();
+        }
+        return;
+      }
+      if (state.pwInput.length < 8) state.pwInput += k;
+      render();
+    });
+  });
+
+  // numeric keypad (entry & edit)
+  app.querySelectorAll('[data-num]').forEach(function (el) {
+    el.addEventListener('click', function () {
+      var k = el.getAttribute('data-num');
+      if (k === 'back') state.amount = state.amount.slice(0, -1);
+      else if (k === 'clear') state.amount = '';
+      else if (k === '.') { if (state.amount.indexOf('.') < 0) state.amount += (state.amount === '' ? '0.' : '.'); }
+      else state.amount += k;
+      // re-render but keep reason focus value
+      var reasonEl = document.getElementById('reasonInput');
+      if (reasonEl) state.reason = reasonEl.value;
+      render();
+    });
+  });
+
+  // reason input live
+  var reasonEl = document.getElementById('reasonInput');
+  if (reasonEl) {
+    reasonEl.addEventListener('input', function () {
+      state.reason = reasonEl.value;
+      var save = document.getElementById('saveBtn') || document.getElementById('saveEditBtn');
+      if (save) save.disabled = !state.amount || parseFloat(state.amount) <= 0 || !state.reason.trim();
+    });
+  }
+
+  // avanti (passo 1 -> passo 2, apre la tastiera sul motivo)
+  var avantiBtn = document.getElementById('avantiBtn');
+  if (avantiBtn) {
+    avantiBtn.addEventListener('click', function () {
+      if (!(state.amount && parseFloat(state.amount) > 0)) return;
+      state.entryStep = 'reason';
+      render();
+      var r = document.getElementById('reasonInput');
+      if (r) { try { r.focus(); } catch (e) {} }
+    });
+  }
+
+  // save (new entry)
+  var saveBtn = document.getElementById('saveBtn');
+  if (saveBtn) {
+    saveBtn.addEventListener('click', function () {
+      var amt = parseFloat(state.amount);
+      if (!amt || amt <= 0 || !state.reason.trim()) return;
+      var signed;
+      if (state.entryType === 'controllo') signed = amt * state.entrySign;
+      else signed = state.entryType === 'deposito' ? amt : -amt;
+      addTransaction({
+        user_name: state.entryType === 'controllo' ? 'Controllo' : state.user,
+        transaction_type: state.entryType,
+        amount: signed,
+        reason: state.reason.trim()
+      });
+      if (state.entryType === 'controllo') go('total');
+      else go('user');
+    });
+  }
+
+  // save edit
+  var saveEditBtn = document.getElementById('saveEditBtn');
+  if (saveEditBtn) {
+    saveEditBtn.addEventListener('click', function () {
+      var amt = parseFloat(state.amount);
+      if (!amt || amt <= 0 || !state.reason.trim()) return;
+      var txs = loadTx(); var t = null;
+      for (var i = 0; i < txs.length; i++) { if (txs[i].local_id === state.editingId) { t = txs[i]; break; } }
+      if (!t) { go('home'); return; }
+      var signed;
+      if (t.transaction_type === 'controllo') signed = (t.amount < 0 ? -amt : amt);
+      else signed = t.transaction_type === 'deposito' ? amt : -amt;
+      editTransaction(state.editingId, signed, state.reason.trim());
+      go('home');
+    });
+  }
+
+  // edit / delete from user page
+  app.querySelectorAll('[data-edit]').forEach(function (el) {
+    el.addEventListener('click', function () {
+      var id = el.getAttribute('data-edit');
+      var txs = loadTx(); var t = null;
+      for (var i = 0; i < txs.length; i++) { if (txs[i].local_id === id) { t = txs[i]; break; } }
+      if (!t) return;
+      state.editingId = id;
+      state.amount = String(Math.abs(t.amount));
+      state.reason = t.reason || '';
+      state.screen = 'edit';
+      render();
+    });
+  });
+  app.querySelectorAll('[data-del]').forEach(function (el) {
+    el.addEventListener('click', function () {
+      var id = el.getAttribute('data-del');
+      if (confirm('Eliminare questa operazione? Resterà tracciata nel log.')) {
+        deleteTransaction(id);
+        render();
+      }
+    });
+  });
+
+  // filters / search
+  app.querySelectorAll('[data-filter]').forEach(function (el) {
+    el.addEventListener('click', function () { state.filter = el.getAttribute('data-filter'); render(); });
+  });
+  var searchEl = document.getElementById('searchInput');
+  if (searchEl) {
+    searchEl.addEventListener('input', function () {
+      state.search = searchEl.value;
+      // light re-render preserving focus
+      var pos = searchEl.selectionStart;
+      render();
+      var s2 = document.getElementById('searchInput');
+      if (s2) { s2.focus(); try { s2.setSelectionRange(pos, pos); } catch (e) {} }
+    });
+  }
+
+  // balance reconstruction
+  var reconDate = document.getElementById('reconDate');
+  if (reconDate) {
+    reconDate.addEventListener('change', function () {
+      var endOfDay = reconDate.value + 'T23:59:59';
+      var res = balanceAtDate(loadTx(), endOfDay);
+      var out = document.getElementById('reconResult');
+      if (out) {
+        out.textContent = eur(res);
+        out.style.color = res >= 0 ? '#16a34a' : '#dc2626';
+      }
+    });
+  }
+}
+
+/* ============== START ============== */
+render();
+syncAll();
+</script>
+</body>
+</html>
