@@ -991,7 +991,7 @@ function bind() {
         amount: signed,
         reason: state.reason.trim()
       });
-      go('user');
+      go('home');
     });
   }
 
@@ -1080,7 +1080,7 @@ function bind() {
         reason: state.reason.trim()
       });
       if (state.entryType === 'controllo') go('total');
-      else go('user');
+      else go('home');
     });
   }
 
@@ -1174,6 +1174,23 @@ pullFromCloud();
   // Schermo intero automatico e silenzioso: scatta al primo tocco e si ripristina da solo.
   document.addEventListener('pointerdown', enterFs, true);
   document.addEventListener('click', enterFs, true);
+
+  // SCHERMO SEMPRE ACCESO finché l'app è aperta (Screen Wake Lock).
+  var wakeLock = null;
+  function requestWakeLock() {
+    if (!('wakeLock' in navigator)) return;
+    try {
+      navigator.wakeLock.request('screen').then(function (wl) {
+        wakeLock = wl;
+        wakeLock.addEventListener('release', function () { wakeLock = null; });
+      }).catch(function () {});
+    } catch (e) {}
+  }
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState === 'visible') requestWakeLock();
+  });
+  document.addEventListener('pointerdown', function () { if (!wakeLock) requestWakeLock(); }, true);
+  requestWakeLock();
 })();
 </script>
 </body>
