@@ -8,8 +8,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Cassaforte">
-<link rel="manifest" href="./manifest.json">
-<link rel="apple-touch-icon" href="./icon-192.png">
+<link rel="apple-touch-icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMAAAADACAIAAADdvvtQAAADvklEQVR4nO3dS1LbQBSGUZPKnBHFHthK1ptVsYkMTPnFI5J/S327+5xhKoUb9ecryyDz9Pz6doB7/Wq9APomICICIiIgIgIiIiAiAiIiICICIiIgIgIiIiAiAiIiICICIiIgIgIiIiAiAiIiICICIiIgIgIiIiAiAiIiICICIiIgIgIiIiAiAiIiICICIiIgIgIiIiAiAiIiICICIiIgIgIi8rv1Amp5//v+3//z8udlh5X04smfOlgSzXfENHVASTqXZs5oxoAe1c1nE5Y03Yvo7erZ+ovXNNEE2nN35xlFs0ygnWfDPKNo/AnUdi+HH0WDT6Dmk6D5ArY2ckBFNq/IMjYybECltq3UYh5rzIAKbljBJT3EgAGV3aqyC0v4YeoXvrt0GrKA0GiX8Xfv8drr7d0eqLihArpvU5Md3f8RqxnwNdAq4V6OlMJ9xplAa4fBY/e+7aM3NOkEevj+DRPEWoMEtGoAbLTZq77sMBd0gwS03KajYsI5NEJAnT6bO132jRECWm6HCTHbEJoooN22dqqGug+o6xNB14s/6j4g2poloJ1PK/OcxWYJiI30HdAAryF6/xb6DmihJieUSc5iUwTEdgREREBEBEREQEQERERARAREZIqAmrzb2/tbzAv1HdAA7/b2/i30HRDNzRKQj7jbyCwBsZHuA+r6NUTXiz/q5tbmeU4KJ13k1UFAE6ZzqXhG1U9hk9dzKH8E6k6g4gdufzVHUfUJRHFFAzJ+Pqt5TCoGVPNIVVDwyFQMiI6UC6jgk6yUasenXED0RUBEBEREQEQERERARAREREBEBEREQEQERERARAREREBEBEREQET83fhv3dwFUe03uYoQ0Be+vIHm+I8yuuEUduvn269q3pzVkICuLOlDQ5cEdLa8DA2dCIiIgD6sHSqG0JGAiAiIiICICIiIgD6sfYvZW9JHAiIioLPlQ8X4ORHQlSVlqOeSgIgIiIiAiAiIiICICIiIgIgIiIiAiAjoil+qX0tARAREREBEBEREQEQERERARAREREBEBHTm0znuICAiAiIiICICIuJTWs/cMXiHchPIBc7Pqh2fcgHRl4oBVXuS1VHwyFQM6FDySDVX85gUDYhePD2/vrVew09cGR2qzp6j6hOo8rHbR/EjUH0CnUw4ioqnc9RNQNRU/RRGcQIiIiAiAiIiICICIiIgIgIiIiAiAiIiICICIiIgIgIiIiAiAiIiICICIiIgIgIiIiAiAiIiICICIiIgIgIiIiAiAiIiICICIiIgIgIi8g+ZYL0sFz53HgAAAABJRU5ErkJggg==">
 <title>Cassaforte</title>
 <style>
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
@@ -1176,13 +1175,6 @@ pullFromCloud();
   document.addEventListener('pointerdown', enterFs, true);
   document.addEventListener('click', enterFs, true);
 })();
-</script>
-<script>
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', function () {
-    navigator.serviceWorker.register('./sw.js').catch(function(){});
-  });
-}
 </script>
 </body>
 </html>
