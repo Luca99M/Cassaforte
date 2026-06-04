@@ -128,6 +128,10 @@ var ADMIN_PW = '1980';
 var K_TX = 'cassaforte_tx_v1';
 var K_AUDIT = 'cassaforte_audit_v1';
 var K_INIT = 'cassaforte_initial_v1';
+var K_LASTSYNC = 'cassaforte_lastsync_v1';
+
+function getLastSync() { return localStorage.getItem(K_LASTSYNC) || ''; }
+function setLastSync() { try { localStorage.setItem(K_LASTSYNC, new Date().toISOString()); } catch (e) {} }
 
 function loadTx() {
   try { return JSON.parse(localStorage.getItem(K_TX) || '[]'); }
@@ -234,6 +238,7 @@ function syncAll() {
         body: JSON.stringify(buildPayload(t))
       }).then(function (res) {
         if (res.ok || res.status === 409) {
+          setLastSync();
           var all = loadTx();
           for (var i = 0; i < all.length; i++) {
             if (all[i].local_id === t.local_id) { all[i].synced = true; break; }
@@ -252,6 +257,38 @@ function syncAll() {
 
 /* Legge lo storico da Supabase e lo unisce al locale (vince la copia più recente;
    le modifiche locali non ancora sincronizzate hanno priorità) */
+function pullReplaceFromCloud(cb) {
+  if (!navigator.onLine) { alert('Serve la connessione a Internet per scaricare i dati.'); if (cb) cb(false); return; }
+  fetch(SUPABASE_URL + '/rest/v1/' + TABLE + '?select=*', {
+    headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
+  })
+  .then(function (r) { if (!r.ok) throw new Error('http'); return r.json(); })
+  .then(function (remote) {
+    if (!Array.isArray(remote)) remote = [];
+    var mapped = remote.map(function (r) {
+      var key = r.local_id || r.id;
+      return {
+        id: r.id || key,
+        local_id: key,
+        user_name: r.user_name,
+        transaction_type: r.transaction_type,
+        amount: Number(r.amount),
+        reason: r.reason || '',
+        created_at: r.created_at,
+        updated_at: r.updated_at || r.created_at,
+        deleted: !!r.deleted,
+        deleted_at: r.deleted_at || null,
+        synced: true
+      };
+    });
+    mapped.sort(function (a, b) { return new Date(b.created_at) - new Date(a.created_at); });
+    saveTx(mapped);
+    if (cb) cb(true);
+    render();
+  })
+  .catch(function () { alert('Errore durante lo scaricamento. Riprova.'); if (cb) cb(false); });
+}
+
 function pullFromCloud(cb) {
   if (!navigator.onLine) { if (cb) cb(); return; }
   fetch(SUPABASE_URL + '/rest/v1/' + TABLE + '?select=*', {
@@ -810,6 +847,9 @@ function renderHistory() {
       '<button class="btn-big blue" style="font-size:18px;padding:14px" data-act="export">⬇️ Esporta CSV</button>' +
       '<button class="btn-big slate" style="font-size:18px;padding:14px" data-act="audit">🧾 Log modifiche</button>' +
     '</div>' +
+    '<button class="btn-big green mt-s" style="font-size:18px;padding:14px" data-act="pull">🔄 Carica dati dal database online</button>' +
+    '<p class="small muted center mt-s">Ultimo invio al database online: <b>' +
+      (getLastSync() ? fmtDateTime(getLastSync()) : 'mai') + '</b></p>' +
     '<div class="mt">' + items + '</div>' +
   '</div>';
 }
@@ -928,6 +968,11 @@ function bind() {
       else if (a === 'total') go('total');
       else if (a === 'history') { go('history'); pullFromCloud(); }
       else if (a === 'audit') go('audit');
+      else if (a === 'pull') {
+        if (confirm('Scaricare TUTTI i dati dal database online e sostituire quelli di questo tablet?\n\nLe operazioni di questo tablet non ancora sincronizzate andranno perse.')) {
+          pullReplaceFromCloud(function (ok) { if (ok) alert('Fatto. Il tablet ora ha gli stessi dati del database online.'); });
+        }
+      }
       else if (a === 'editBack') go(state.editReturn || 'home');
       else if (a === 'userback') { stopRecognition(); state.voiceError = ''; state.screen = 'user'; render(); }
       else if (a === 'export') exportCSV();
