@@ -109,10 +109,26 @@
   .purple { background:#7c3aed; } .purple:active { background:#6d28d9; }
   .heard { background:#f5f3ff; border:1px solid #ddd6fe; border-radius:12px; padding:14px; font-size:18px; }
   .narrow { max-width:520px; margin:0 auto; }
+
+  .fs-overlay { position:fixed; inset:0; background:#0f172a; display:flex; flex-direction:column;
+                align-items:center; justify-content:center; z-index:9999; padding:24px; text-align:center; }
+  .fs-overlay h2 { color:#fff; font-size:30px; }
+  .fs-overlay .sub { color:#94a3b8; font-size:15px; margin-top:8px; max-width:320px; }
+  .fs-btn { background:#7c3aed; color:#fff; font-weight:800; font-size:26px; padding:26px 34px;
+            border-radius:18px; margin-top:26px; box-shadow:0 6px 16px rgba(0,0,0,.3); }
+  .fs-btn:active { background:#6d28d9; transform:scale(.98); }
+  .fs-skip { color:#94a3b8; margin-top:18px; background:none; font-size:15px; text-decoration:underline; }
 </style>
 </head>
 <body>
 <div id="app"></div>
+<div class="fs-overlay" id="fsOverlay">
+  <div style="font-size:64px">🔒</div>
+  <h2>Cassaforte</h2>
+  <div class="sub">Tocca per aprire l'app a tutto schermo, senza la barra di Chrome.</div>
+  <button class="fs-btn" id="fsBtn">▶️ Apri a tutto schermo</button>
+  <button class="fs-skip" id="fsSkip">Continua così</button>
+</div>
 
 <script>
 "use strict";
@@ -1162,6 +1178,28 @@ function bind() {
 render();
 syncAll();
 pullFromCloud();
+</script>
+<script>
+(function () {
+  function isFs() { return document.fullscreenElement || document.webkitFullscreenElement; }
+  function enterFs() {
+    var el = document.documentElement;
+    var fn = el.requestFullscreen || el.webkitRequestFullscreen || el.mozRequestFullScreen || el.msRequestFullscreen;
+    if (fn) { try { var p = fn.call(el); if (p && p.catch) p.catch(function(){}); } catch (e) {} }
+  }
+  function showOverlay(show) {
+    var o = document.getElementById('fsOverlay');
+    if (o) o.style.display = show ? 'flex' : 'none';
+  }
+  var skipped = false;
+  var btn = document.getElementById('fsBtn');
+  var skip = document.getElementById('fsSkip');
+  if (btn) btn.addEventListener('click', function () { enterFs(); showOverlay(false); });
+  if (skip) skip.addEventListener('click', function () { skipped = true; showOverlay(false); });
+  function onChange() { if (!isFs() && !skipped) showOverlay(true); else showOverlay(false); }
+  document.addEventListener('fullscreenchange', onChange);
+  document.addEventListener('webkitfullscreenchange', onChange);
+})();
 </script>
 </body>
 </html>
